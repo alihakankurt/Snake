@@ -9,5 +9,5 @@ A snake game made with Python using [PyGame](https://www.pygame.org/) framework 
 ## How to Play
 
 ```console
-% python3 snake.py
+% python3 Source/Game.py
 ```
