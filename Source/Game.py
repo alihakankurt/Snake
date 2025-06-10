@@ -1,74 +1,88 @@
 import pygame
 from Snake import Snake
 from Apple import Apple
-from Constants import FPS, WIDTH, HEIGHT, TITLE, TILE_SIZE, BACKGROUND_COLORS
+from Constants import FPS, TITLE, WIDTH, HEIGHT, TILE_SIZE, BACKGROUND_COLORS
 
-if __name__ == "__main__":
-    pygame.init()
+class Game:
+    def __init__(self):
+        pygame.display.set_caption(TITLE)
+        self.screen = pygame.display.set_mode([WIDTH, HEIGHT], pygame.RESIZABLE, 32, 0, 0)
+        self.game_over_font = pygame.font.Font(None, 74)
+        self.snake = Snake()
+        self.apple = Apple()
+        self.frame_time = 0
+        self.running = True
+        self.game_over = False
 
-    pygame.display.set_caption(TITLE)
-    screen = pygame.display.set_mode([1280, 720], pygame.RESIZABLE, 32, 0, 0)
-    game_over = False
-    totalDelta = 0
 
-    snake = Snake()
-    apple = Apple()
+    def _poll_events(self) -> None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.KEYDOWN:
+                self.game_over = False
+                if event.scancode == pygame.KSCAN_ESCAPE:
+                    self.running = False
+                elif event.scancode == pygame.KSCAN_UP:
+                    self.snake.change_direction("UP")
+                elif event.scancode == pygame.KSCAN_DOWN:
+                    self.snake.change_direction("DOWN")
+                elif event.scancode == pygame.KSCAN_LEFT:
+                    self.snake.change_direction("LEFT")
+                elif event.scancode == pygame.KSCAN_RIGHT:
+                    self.snake.change_direction("RIGHT")
 
-    running = True
-    while running:
-    start = pygame.time.get_ticks()
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+    def _check_is_game_over(self) -> None:
+        if not self.snake.is_eaten_by_itself() and not self.snake.is_out_of_board():
+            return
 
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_UP]:
-        snake.change_direction("UP")
-    elif keys[pygame.K_DOWN]:
-        snake.change_direction("DOWN")
-    elif keys[pygame.K_LEFT]:
-        snake.change_direction("LEFT")
-    elif keys[pygame.K_RIGHT]:
-        snake.change_direction("RIGHT")
-    elif game_over:
-        continue
+        score = self.snake.get_score()
+        self.snake.reset()
 
-    game_over = False
-    end = pygame.time.get_ticks()
-    delta = end - start
-    if totalDelta + delta < 1000 / FPS:
-        totalDelta += delta
-        continue
-
-    totalDelta = 0
-
-    snake.move()
-    if snake.check_collision() or snake.check_boundaries():
-        score = snake.get_score()
-        snake.reset()
-
-        font = pygame.font.Font(None, 74)
-        text = font.render(f"Game Over! Score: {score}", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
-        screen.blit(text, text_rect)
+        game_over_text = self.game_over_font.render(f"Game Over! Score: {score}", True, (255, 255, 255))
+        game_over_text_rect = game_over_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        self.screen.blit(game_over_text, game_over_text_rect)
         pygame.display.flip()
-        game_over = True
-        continue
+        self.game_over = True
 
-    if snake.check_apple(apple):
-        snake.grow()
-        apple.reset()
 
-    screen.fill((0, 0, 0))
-    for x in range(0, WIDTH, TILE_SIZE):
-        for y in range(0, HEIGHT, TILE_SIZE):
-            color = BACKGROUND_COLORS[(x + y) // TILE_SIZE % 2]
-            pygame.draw.rect(screen, color, (x, y, TILE_SIZE, TILE_SIZE))
+    def _render_frame(self) -> None:
+        self.screen.fill((0, 0, 0))
+        for x in range(0, WIDTH, TILE_SIZE):
+            for y in range(0, HEIGHT, TILE_SIZE):
+                color = BACKGROUND_COLORS[(x + y) // TILE_SIZE % 2]
+                pygame.draw.rect(self.screen, color, (x, y, TILE_SIZE, TILE_SIZE))
 
-    apple.draw(screen)
-    snake.draw(screen)
+        self.apple.draw(self.screen)
+        self.snake.draw(self.screen)
 
-    pygame.display.flip()
 
-    pygame.quit()
+    def run(self) -> None:
+        while self.running:
+            start_time = pygame.time.get_ticks()
+
+            self._poll_events()
+            if self.game_over:
+                continue
+
+            end_time = pygame.time.get_ticks()
+            delta_time = end_time - start_time
+            self.frame_time += delta_time
+
+            if self.frame_time < (1000 // FPS):
+                continue
+
+            self.frame_time = 0
+
+            self.snake.move()
+            self._check_is_game_over()
+            if self.game_over:
+                continue
+
+            if self.snake.check_apple(self.apple):
+                self.snake.grow()
+                self.apple.reset()
+
+            self._render_frame()
+            pygame.display.flip()

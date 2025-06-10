@@ -1,13 +1,13 @@
 import pygame
-from Constants import APPLE_COLOR, HALF_TILE_SIZE, TILE_SIZE, WIDTH, HEIGHT
+from Constants import WIDTH, HEIGHT, TILE_SIZE, HALF_TILE_SIZE, HORIZONTAL_TILE_COUNT, VERTICAL_TILE_COUNT, APPLE_COLOR
 
 class Apple:
     def __init__(self):
         self.reset()
 
     def reset(self):
-        x: int = pygame.time.get_ticks() % (WIDTH // TILE_SIZE)
-        y: int = pygame.time.get_ticks() % (HEIGHT // TILE_SIZE)
+        x: int = pygame.time.get_ticks() % HORIZONTAL_TILE_COUNT
+        y: int = pygame.time.get_ticks() % VERTICAL_TILE_COUNT
         self.position = (x, y)
 
     def draw(self, screen):
